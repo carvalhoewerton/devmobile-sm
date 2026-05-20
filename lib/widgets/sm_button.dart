@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/sm_theme.dart';
+import 'package:shop_management/theme/app_theme.dart';
 
 class SMButton extends StatelessWidget {
   final String label;
@@ -21,9 +21,9 @@ class SMButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: SMTheme.buttonColor,
-          foregroundColor: SMTheme.buttonText,
-          disabledBackgroundColor: SMTheme.buttonColor.withOpacity(0.6),
+          backgroundColor: AppTheme.buttonColor,
+          foregroundColor: AppTheme.buttonText,
+          disabledBackgroundColor: AppTheme.buttonColor.withOpacity(0.6),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
