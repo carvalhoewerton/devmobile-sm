@@ -4,8 +4,32 @@ import '../widgets/app_text_field.dart';
 import '../widgets/app_button.dart';
 import '../utils/app_routes.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _senhaController = TextEditingController();
+  String? _erro;
+
+  static const _emailEsperado = 'admin@email.com';
+  static const _senhaEsperada = '123456';
+
+  void _fazerLogin() {
+    final emailDigitado = _emailController.text.trim();
+    final senhaDigitada = _senhaController.text;
+
+    if (emailDigitado == _emailEsperado && senhaDigitada == _senhaEsperada) {
+      setState(() => _erro = null);
+      //Navigator.pushNamed(context, AppRoutes.products);
+    } else {
+      setState(() => _erro = 'E-mail ou senha inválidos');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,9 +91,7 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 28),
-
                       const Text(
                         'BEM VINDO DE VOLTA!',
                         style: TextStyle(
@@ -78,29 +100,33 @@ class LoginScreen extends StatelessWidget {
                           color: AppTheme.bodyText,
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
                       AppTextField(
-                        hint: 'E-mail',
-                        prefixIcon: Icons.mail_outline,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-
+                          hint: 'E-mail',
+                          prefixIcon: Icons.mail_outline,
+                          keyboardType: TextInputType.emailAddress,
+                          controller: _emailController),
                       const SizedBox(height: 12),
-
                       AppTextField(
-                        hint: 'Senha',
-                        prefixIcon: Icons.lock_outline,
-                        isPassword: true,
-                      ),
-
+                          hint: 'Senha',
+                          prefixIcon: Icons.lock_outline,
+                          isPassword: true,
+                          controller: _senhaController),
+                      if (_erro != null)
+                        Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(_erro!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 13,
+                                ),
+                                textAlign: TextAlign.center)),
                       const SizedBox(height: 10),
-
                       Align(
                         alignment: Alignment.center,
                         child: GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                          onTap: () => Navigator.pushNamed(
+                              context, AppRoutes.forgotPassword),
                           child: const Text(
                             'Esqueci minha senha',
                             style: TextStyle(
@@ -111,9 +137,7 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 10),
-
                       Align(
                         alignment: Alignment.center,
                         child: RichText(
@@ -135,12 +159,10 @@ class LoginScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 20),
-
                       AppButton(
                         label: 'Entrar',
-                        onPressed: () {},
+                        onPressed: _fazerLogin,
                       ),
                     ],
                   ),

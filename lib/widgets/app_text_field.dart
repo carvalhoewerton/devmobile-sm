@@ -6,6 +6,7 @@ class AppTextField extends StatelessWidget {
   final IconData prefixIcon;
   final bool isPassword;
   final TextInputType keyboardType;
+  final TextEditingController? controller;
 
   const AppTextField({
     super.key,
@@ -13,11 +14,13 @@ class AppTextField extends StatelessWidget {
     required this.prefixIcon,
     this.isPassword = false,
     this.keyboardType = TextInputType.text,
+    this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       obscureText: isPassword,
       keyboardType: keyboardType,
       style: const TextStyle(
