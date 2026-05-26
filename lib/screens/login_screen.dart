@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/app_button.dart';
 import '../utils/app_routes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,13 +20,39 @@ class _LoginScreenState extends State<LoginScreen> {
   static const _emailEsperado = 'admin@email.com';
   static const _senhaEsperada = '123456';
 
-  void _fazerLogin() {
+  Future<void> _fazerLogin() async {
     final emailDigitado = _emailController.text.trim();
     final senhaDigitada = _senhaController.text;
 
-    if (emailDigitado == _emailEsperado && senhaDigitada == _senhaEsperada) {
+    if (emailDigitado.isEmpty || senhaDigitada.isEmpty) {
+      setState(() => _erro = 'Preencha todos os campos');
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    final emailSalvo = prefs.getString('user_email');
+    final senhaSalva = prefs.getString('user_password');
+
+    // Verifica se existe alguém cadastrado
+    if (emailSalvo == null || senhaSalva == null) {
+      setState(() => _erro = 'Nenhum usuário cadastrado. Registre-se primeiro.');
+      return;
+    }
+
+    if (emailDigitado == emailSalvo && senhaDigitada == senhaSalva) {
       setState(() => _erro = null);
-      //Navigator.pushNamed(context, AppRoutes.products);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login realizado com sucesso!'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+        
+        Navigator.pushReplacementNamed(context, AppRoutes.products);
+      }
     } else {
       setState(() => _erro = 'E-mail ou senha inválidos');
     }
@@ -117,46 +144,36 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(_erro!,
                                 style: const TextStyle(
-                                  color: Colors.red,
+                                  color: AppTheme.error,
                                   fontSize: 13,
                                 ),
                                 textAlign: TextAlign.center)),
                       const SizedBox(height: 10),
                       Align(
                         alignment: Alignment.center,
-                        child: GestureDetector(
-                          onTap: () => Navigator.pushNamed(
-                              context, AppRoutes.forgotPassword),
-                          child: const Text(
-                            'Esqueci minha senha',
-                            style: TextStyle(
-                              color: AppTheme.linkColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Ainda não tem uma conta? ',
+                              style: TextStyle(
+                                color: AppTheme.subtleText,
+                                fontSize: 13,
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.center,
-                        child: RichText(
-                          text: const TextSpan(
-                            text: 'Ainda não tem uma conta? ',
-                            style: TextStyle(
-                              color: AppTheme.subtleText,
-                              fontSize: 13,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: 'Registre-se',
+                            GestureDetector(
+                              onTap: () => Navigator.pushNamed(
+                                  context, AppRoutes.register),
+                              child: const Text(
+                                'Registre-se',
                                 style: TextStyle(
                                   color: AppTheme.linkColor,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 20),

@@ -15,6 +15,8 @@ class AppTheme {
   static const Color logoCircle = Color(0xFF1A3A6B);
   static const Color subtleText = Color(0xFF6C757D);
   static const Color bodyText = Color(0xFF212529);
+  static const Color error = Color(0xFFDC3545);
+  static const Color success = Color(0xFF80EF80);
 
   static ThemeData get theme {
     return ThemeData(
