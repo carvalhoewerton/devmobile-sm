@@ -17,9 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _senhaController = TextEditingController();
   String? _erro;
 
-  static const _emailEsperado = 'admin@email.com';
-  static const _senhaEsperada = '123456';
-
   Future<void> _fazerLogin() async {
     final emailDigitado = _emailController.text.trim();
     final senhaDigitada = _senhaController.text;
@@ -30,11 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final prefs = await SharedPreferences.getInstance();
-
     final emailSalvo = prefs.getString('user_email');
     final senhaSalva = prefs.getString('user_password');
 
-    // Verifica se existe alguém cadastrado
     if (emailSalvo == null || senhaSalva == null) {
       setState(() => _erro = 'Nenhum usuário cadastrado. Registre-se primeiro.');
       return;
@@ -42,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (emailDigitado == emailSalvo && senhaDigitada == senhaSalva) {
       setState(() => _erro = null);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -50,7 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor: AppTheme.success,
           ),
         );
-        
         Navigator.pushReplacementNamed(context, AppRoutes.products);
       }
     } else {
@@ -129,53 +123,70 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
                       AppTextField(
-                          hint: 'E-mail',
-                          prefixIcon: Icons.mail_outline,
-                          keyboardType: TextInputType.emailAddress,
-                          controller: _emailController),
+                        hint: 'E-mail',
+                        prefixIcon: Icons.mail_outline,
+                        keyboardType: TextInputType.emailAddress,
+                        controller: _emailController,
+                      ),
                       const SizedBox(height: 12),
                       AppTextField(
-                          hint: 'Senha',
-                          prefixIcon: Icons.lock_outline,
-                          isPassword: true,
-                          controller: _senhaController),
+                        hint: 'Senha',
+                        prefixIcon: Icons.lock_outline,
+                        isPassword: true,
+                        controller: _senhaController,
+                      ),
+                      const SizedBox(height: 10),
+                      Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                            child: const Text(
+                              'Esqueceu sua senha?',
+                              style: TextStyle(
+                                color: AppTheme.linkColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'Ainda não tem uma conta? ',
+                                style: TextStyle(
+                                  color: AppTheme.subtleText,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => Navigator.pushNamed(context, AppRoutes.register),
+                                child: const Text(
+                                  'Registre-se',
+                                  style: TextStyle(
+                                    color: AppTheme.linkColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                       if (_erro != null)
                         Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(_erro!,
-                                style: const TextStyle(
-                                  color: AppTheme.error,
-                                  fontSize: 13,
-                                ),
-                                textAlign: TextAlign.center)),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'Ainda não tem uma conta? ',
-                              style: TextStyle(
-                                color: AppTheme.subtleText,
-                                fontSize: 13,
-                              ),
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            _erro!,
+                            style: const TextStyle(
+                              color: AppTheme.error,
+                              fontSize: 13,
                             ),
-                            GestureDetector(
-                              onTap: () => Navigator.pushNamed(
-                                  context, AppRoutes.register),
-                              child: const Text(
-                                'Registre-se',
-                                style: TextStyle(
-                                  color: AppTheme.linkColor,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+                            textAlign: TextAlign.center,
+                          ),
                         ),
-                      ),
                       const SizedBox(height: 20),
                       AppButton(
                         label: 'Entrar',
