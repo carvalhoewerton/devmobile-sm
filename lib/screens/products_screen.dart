@@ -46,14 +46,34 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('username');
-    await prefs.remove('password');
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.login);
-    }
+  final confirmar = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Sair'),
+      content: const Text('Tem certeza que deseja sair?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Sair', style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmar != true) return;
+
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.remove('token');
+  await prefs.remove('username');
+  await prefs.remove('password');
+  if (mounted) {
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
+}
 
   @override
   Widget build(BuildContext context) {

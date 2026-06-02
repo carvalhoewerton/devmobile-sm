@@ -10,7 +10,7 @@ class AuthService {
       body: jsonEncode({'username': username, 'password': password}),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
       final data = jsonDecode(response.body);
       return data['token'] as String;
     }
