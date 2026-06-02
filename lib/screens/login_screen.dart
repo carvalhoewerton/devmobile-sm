@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/app_button.dart';
 import '../utils/app_routes.dart';
+import '../service/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,25 +19,20 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _erro;
 
   Future<void> _fazerLogin() async {
-    final emailDigitado = _emailController.text.trim();
-    final senhaDigitada = _senhaController.text;
+    final username = _emailController.text.trim();
+    final senha = _senhaController.text;
 
-    if (emailDigitado.isEmpty || senhaDigitada.isEmpty) {
+    if (username.isEmpty || senha.isEmpty) {
       setState(() => _erro = 'Preencha todos os campos');
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final emailSalvo = prefs.getString('user_email');
-    final senhaSalva = prefs.getString('user_password');
-
-    if (emailSalvo == null || senhaSalva == null) {
-      setState(() => _erro = 'Nenhum usuário cadastrado. Registre-se primeiro.');
-      return;
-    }
-
-    if (emailDigitado == emailSalvo && senhaDigitada == senhaSalva) {
-      setState(() => _erro = null);
+    try {
+      final token = await AuthService().login(username, senha);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+      await prefs.setString('username', username);  
+      await prefs.setString('password', senha);  
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -47,8 +43,8 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         Navigator.pushReplacementNamed(context, AppRoutes.products);
       }
-    } else {
-      setState(() => _erro = 'E-mail ou senha inválidos');
+    } catch (e) {
+      setState(() => _erro = e.toString().replaceAll('Exception: ', ''));
     }
   }
 
@@ -123,9 +119,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
                       AppTextField(
-                        hint: 'E-mail',
-                        prefixIcon: Icons.mail_outline,
-                        keyboardType: TextInputType.emailAddress,
+                        hint: 'Usuário',
+                        prefixIcon: Icons.person_outline,
                         controller: _emailController,
                       ),
                       const SizedBox(height: 12),

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shop_management/model/product_model.dart';
+import 'package:shop_management/service/product_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_routes.dart';
 
@@ -10,14 +13,47 @@ class ProductsScreen extends StatefulWidget {
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
-  // Lista de produtos para exibição
-  final List<Map<String, dynamic>> _produtos = [
-    {'nome': 'Notebook Asus Vivobook', 'preco': 3499.90, 'estoque': 8, 'categoria': 'Eletrónicos'},
-    {'nome': 'Smartphone Samsung S23', 'preco': 4299.00, 'estoque': 15, 'categoria': 'Telemóveis'},
-    {'nome': 'Teclado Mecânico RGB', 'preco': 299.90, 'estoque': 22, 'categoria': 'Acessórios'},
-    {'nome': 'Mouse Gamer Sem Fio', 'preco': 199.90, 'estoque': 30, 'categoria': 'Acessórios'},
-    {'nome': 'Monitor Ultrawide 29"', 'preco': 1299.00, 'estoque': 5, 'categoria': 'Eletrónicos'},
-  ];
+  final ProductService _service = ProductService();
+  List<Product> _produtos = [];
+  bool _loading = true;
+  String? _erro;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarProdutos();
+  }
+
+  Future<void> _carregarProdutos() async {
+    setState(() {
+      _loading = true;
+      _erro = null;
+    });
+    try {
+      final produtos = await _service.getProducts();
+      setState(() {
+        _produtos = produtos;
+      });
+    } catch (e) {
+      setState(() {
+        _erro = e.toString();
+      });
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('username');
+    await prefs.remove('password');
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +62,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false, 
+        automaticallyImplyLeading: false,
         title: const Text(
           'Produtos',
           style: TextStyle(
-            color: Colors.white, 
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
@@ -38,51 +74,71 @@ class _ProductsScreenState extends State<ProductsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-            onPressed: () {
-            },
+            onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, AppRoutes.login);
-            },
+            onPressed: _logout,
           ),
         ],
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.65,
-        ),
-        itemCount: _produtos.length,
-        itemBuilder: (context, index) {
-          final produto = _produtos[index];
-          return ProdutoCard(produto: produto);
-        },
-      ),
+      body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         onPressed: () async {
           final bool? mudou = await Navigator.pushNamed(
-            context, 
-            AppRoutes.registerProduct
+            context,
+            AppRoutes.registerProduct,
           ) as bool?;
-
           if (mudou == true) {
+            _carregarProdutos();
           }
         },
         child: const Icon(Icons.add),
       ),
     );
   }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_erro != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const SizedBox(height: 12),
+            Text(_erro!, style: const TextStyle(color: Colors.white)),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _carregarProdutos,
+              child: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      );
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.65,
+      ),
+      itemCount: _produtos.length,
+      itemBuilder: (context, index) {
+        return ProdutoCard(produto: _produtos[index]);
+      },
+    );
+  }
 }
 
 class ProdutoCard extends StatelessWidget {
-  final Map<String, dynamic> produto;
+  final Product produto;
 
   const ProdutoCard({super.key, required this.produto});
 
@@ -103,23 +159,30 @@ class ProdutoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Expanded(
             flex: 4,
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE0E0E0),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              ),
-              child: const Icon(
-                Icons.image_not_supported_outlined, 
-                size: 40, 
-                color: Colors.black54,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              child: Image.network(
+                produto.image,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const ColoredBox(
+                  color: Color(0xFFE0E0E0),
+                  child: Center(
+                    child: Icon(Icons.image_not_supported_outlined, size: 40, color: Colors.black54),
+                  ),
+                ),
+                loadingBuilder: (_, child, progress) {
+                  if (progress == null) return child;
+                  return const ColoredBox(
+                    color: Color(0xFFE0E0E0),
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  );
+                },
               ),
             ),
           ),
-          
           Expanded(
             flex: 5,
             child: Padding(
@@ -132,7 +195,7 @@ class ProdutoCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        produto['nome'],
+                        produto.title,
                         style: const TextStyle(
                           color: AppTheme.bodyText,
                           fontWeight: FontWeight.bold,
@@ -143,22 +206,21 @@ class ProdutoCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Estoque: ${produto['estoque']} un.\n${produto['categoria']}',
+                        produto.category,
                         style: const TextStyle(
-                          color: AppTheme.subtleText, 
+                          color: AppTheme.subtleText,
                           fontSize: 10,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                  
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'R\$ ${produto['preco'].toStringAsFixed(2)}',
+                        'R\$ ${produto.price.toStringAsFixed(2)}',
                         style: const TextStyle(
                           color: Colors.blue,
                           fontWeight: FontWeight.bold,
