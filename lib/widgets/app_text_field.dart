@@ -7,6 +7,7 @@ class AppTextField extends StatelessWidget {
   final bool isPassword;
   final TextInputType keyboardType;
   final TextEditingController? controller;
+  final int maxLines;
 
   const AppTextField({
     super.key,
@@ -15,6 +16,7 @@ class AppTextField extends StatelessWidget {
     this.isPassword = false,
     this.keyboardType = TextInputType.text,
     this.controller,
+    this.maxLines = 1,
   });
 
   @override
@@ -23,6 +25,7 @@ class AppTextField extends StatelessWidget {
       controller: controller,
       obscureText: isPassword,
       keyboardType: keyboardType,
+      maxLines: maxLines,
       style: const TextStyle(
         fontSize: 14,
         color: AppTheme.bodyText,

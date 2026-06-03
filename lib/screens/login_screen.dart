@@ -13,6 +13,9 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+//Username: johnd Password: m38rmF$
+
+
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
@@ -31,8 +34,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final token = await AuthService().login(username, senha);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
-      await prefs.setString('username', username);  
-      await prefs.setString('password', senha);  
+      await prefs.setString('username', username);
+      await prefs.setString('password', senha);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -145,8 +148,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Wrap(
+                            alignment: WrapAlignment.center,
                             children: [
                               const Text(
                                 'Ainda não tem uma conta? ',

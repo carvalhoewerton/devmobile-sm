@@ -1,6 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../service/product_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/app_button.dart';
@@ -13,47 +12,64 @@ class RegisterProductScreen extends StatefulWidget {
 }
 
 class _RegisterProductScreenState extends State<RegisterProductScreen> {
-  final _nomeController = TextEditingController();
-  final _precoController = TextEditingController();
-  final _estoqueController = TextEditingController();
-  final _categoriaController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _categoryController = TextEditingController();
+  final _imageController = TextEditingController();
+
+  bool _isLoading = false;
   String? _erro;
 
-  Future<void> _salvarProduto() async {
-    final nome = _nomeController.text.trim();
-    final preco = double.tryParse(_precoController.text) ?? 0.0;
-    final estoque = int.tryParse(_estoqueController.text) ?? 0;
-    final categoria = _categoriaController.text.trim();
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _priceController.dispose();
+    _descriptionController.dispose();
+    _categoryController.dispose();
+    _imageController.dispose();
+    super.dispose();
+  }
 
-    if (nome.isEmpty || categoria.isEmpty || preco <= 0) {
-      setState(() => _erro = 'Preencha os campos corretamente');
+  Future<void> _salvarProduto() async {
+    final title = _titleController.text.trim();
+    final price = double.tryParse(_priceController.text.replaceAll(',', '.'));
+    final description = _descriptionController.text.trim();
+    final category = _categoryController.text.trim();
+    final image = _imageController.text.trim();
+
+    if (title.isEmpty || price == null || price <= 0 || description.isEmpty || category.isEmpty) {
+      setState(() => _erro = 'Preencha todos os campos obrigatórios corretamente.');
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    
-    final String? produtosJson = prefs.getString('lista_produtos');
-    List<dynamic> listaProdutos = [];
-    
-    if (produtosJson != null) {
-      listaProdutos = jsonDecode(produtosJson);
-    }
+    setState(() {
+      _isLoading = true;
+      _erro = null;
+    });
 
-    final novoProduto = {
-      'nome': nome,
-      'preco': preco,
-      'estoque': estoque,
-      'categoria': categoria,
-    };
-
-    listaProdutos.add(novoProduto);
-    await prefs.setString('lista_produtos', jsonEncode(listaProdutos));
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Produto cadastrado!'), backgroundColor: AppTheme.success),
+    try {
+      await ProductService().createProduct(
+        title: title,
+        price: price,
+        description: description,
+        category: category,
+        image: image.isEmpty ? 'https://i.pravatar.cc' : image,
       );
-      Navigator.pop(context, true);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Produto cadastrado com sucesso!'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      setState(() => _erro = 'Erro ao cadastrar produto. Tente novamente.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -80,41 +96,46 @@ class _RegisterProductScreenState extends State<RegisterProductScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('DETALHES DO PRODUTO', 
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.subtleText)),
+                const Text(
+                  'DETALHES DO PRODUTO',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.subtleText),
+                ),
                 const SizedBox(height: 20),
                 AppTextField(
-                  hint: 'Nome do Produto',
+                  hint: 'Nome do Produto *',
                   prefixIcon: Icons.shopping_cart_outlined,
-                  controller: _nomeController,
+                  controller: _titleController,
+                  maxLines: 1,
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
-                  hint: 'Categoria',
+                  hint: 'Categoria *',
                   prefixIcon: Icons.category_outlined,
-                  controller: _categoriaController,
+                  controller: _categoryController,
+                  maxLines: 1,
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppTextField(
-                        hint: 'Preço (Ex: 10.50)',
-                        prefixIcon: Icons.attach_money,
-                        keyboardType: TextInputType.number,
-                        controller: _precoController,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AppTextField(
-                        hint: 'Estoque',
-                        prefixIcon: Icons.inventory_2_outlined,
-                        keyboardType: TextInputType.number,
-                        controller: _estoqueController,
-                      ),
-                    ),
-                  ],
+                AppTextField(
+                  hint: 'Preço (Ex: 10.50) *',
+                  prefixIcon: Icons.attach_money,
+                  keyboardType: TextInputType.number,
+                  controller: _priceController,
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  hint: 'Descrição *',
+                  prefixIcon: Icons.description_outlined,
+                  controller: _descriptionController,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 12),
+                AppTextField(
+                  hint: 'URL da Imagem (opcional)',
+                  prefixIcon: Icons.image_outlined,
+                  controller: _imageController,
+                  keyboardType: TextInputType.url,
+                  maxLines: 1,
                 ),
                 if (_erro != null)
                   Padding(
@@ -123,8 +144,8 @@ class _RegisterProductScreenState extends State<RegisterProductScreen> {
                   ),
                 const SizedBox(height: 32),
                 AppButton(
-                  label: 'Cadastrar Produto',
-                  onPressed: _salvarProduto,
+                  label: _isLoading ? 'Cadastrando...' : 'Cadastrar Produto',
+                  onPressed: _isLoading ? () {} : () => _salvarProduto(),
                 ),
               ],
             ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/app_button.dart';
+import '../service/user_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,35 +12,56 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _nomeController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
+
+  bool _isLoading = false;
   String? _erro;
 
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _senhaController.dispose();
+    super.dispose();
+  }
+
   Future<void> _fazerCadastro() async {
-    final nome = _nomeController.text.trim();
+    final username = _usernameController.text.trim();
     final email = _emailController.text.trim();
     final senha = _senhaController.text;
 
-    if (nome.isEmpty || email.isEmpty || senha.isEmpty) {
+    if (username.isEmpty || email.isEmpty || senha.isEmpty) {
       setState(() => _erro = 'Preencha todos os campos');
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoading = true;
+      _erro = null;
+    });
 
-    await prefs.setString('user_name', nome);
-    await prefs.setString('user_email', email);
-    await prefs.setString('user_password', senha);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cadastro realizado com sucesso!'),
-          backgroundColor: AppTheme.success,
-        ),
+    try {
+      await UserService().createUser(
+        username: username,
+        email: email,
+        password: senha,
       );
-      Navigator.pop(context);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cadastro realizado com sucesso!'),
+            backgroundColor: AppTheme.success,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      setState(() => _erro = 'Erro ao criar conta. Tente novamente.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -88,9 +109,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
                       AppTextField(
-                        hint: 'Nome completo',
+                        hint: 'Usuário',
                         prefixIcon: Icons.person_outline,
-                        controller: _nomeController,
+                        controller: _usernameController,
                       ),
                       const SizedBox(height: 12),
                       AppTextField(
@@ -122,8 +143,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       const SizedBox(height: 24),
                       AppButton(
-                        label: 'Cadastrar',
-                        onPressed: _fazerCadastro,
+                        label: _isLoading ? 'Cadastrando...' : 'Cadastrar',
+                        onPressed: _isLoading ? () {} : () => _fazerCadastro(),
                       ),
                     ],
                   ),
