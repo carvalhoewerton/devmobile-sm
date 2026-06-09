@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shop_management/model/cart_item_model.dart';
 import 'package:shop_management/model/product_model.dart';
+import 'package:shop_management/screens/cart_screen.dart';
 import 'package:shop_management/service/product_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_routes.dart';
@@ -15,6 +17,7 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   final ProductService _service = ProductService();
   List<Product> _produtos = [];
+  final List<CartItem> _carrinho = [];
   bool _loading = true;
   String? _erro;
 
@@ -45,35 +48,61 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
-  Future<void> _logout() async {
-  final confirmar = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Sair'),
-      content: const Text('Tem certeza que deseja sair?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancelar'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Sair', style: TextStyle(color: Colors.red)),
-        ),
-      ],
-    ),
-  );
+  void _adicionarAoCarrinho(Product produto) {
+    setState(() {
+      final index =
+          _carrinho.indexWhere((item) => item.productId == produto.id);
+      if (index >= 0) {
+        _carrinho[index].quantity++;
+      } else {
+        _carrinho.add(CartItem(
+          productId: produto.id,
+          title: produto.title,
+          price: produto.price,
+          image: produto.image,
+        ));
+      }
+    });
 
-  if (confirmar != true) return;
-
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.remove('token');
-  await prefs.remove('username');
-  await prefs.remove('password');
-  if (mounted) {
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
+    // 👇 feedback visual
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${produto.title} adicionado ao carrinho!'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: AppTheme.success,
+      ),
+    );
   }
-}
+
+  Future<void> _logout() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sair'),
+        content: const Text('Tem certeza que deseja sair?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sair', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('username');
+    await prefs.remove('password');
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +123,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CartScreen(carrinho: _carrinho),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white),
@@ -151,7 +187,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
       ),
       itemCount: _produtos.length,
       itemBuilder: (context, index) {
-        return ProdutoCard(produto: _produtos[index]);
+        return ProdutoCard(
+          produto: _produtos[index],
+          onComprar: _adicionarAoCarrinho,
+        );
       },
     );
   }
@@ -159,8 +198,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
 class ProdutoCard extends StatelessWidget {
   final Product produto;
+  final void Function(Product) onComprar;
 
-  const ProdutoCard({super.key, required this.produto});
+  const ProdutoCard(
+      {super.key, required this.produto, required this.onComprar});
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +223,8 @@ class ProdutoCard extends StatelessWidget {
           Expanded(
             flex: 4,
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
               child: Image.network(
                 produto.image,
                 width: double.infinity,
@@ -190,14 +232,16 @@ class ProdutoCard extends StatelessWidget {
                 errorBuilder: (_, __, ___) => const ColoredBox(
                   color: Color(0xFFE0E0E0),
                   child: Center(
-                    child: Icon(Icons.image_not_supported_outlined, size: 40, color: Colors.black54),
+                    child: Icon(Icons.image_not_supported_outlined,
+                        size: 40, color: Colors.black54),
                   ),
                 ),
                 loadingBuilder: (_, child, progress) {
                   if (progress == null) return child;
                   return const ColoredBox(
                     color: Color(0xFFE0E0E0),
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2)),
                   );
                 },
               ),
@@ -247,18 +291,22 @@ class ProdutoCard extends StatelessWidget {
                           fontSize: 12,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'Comprar',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      GestureDetector(
+                        onTap: () => onComprar(produto),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Comprar',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
