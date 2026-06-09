@@ -13,13 +13,12 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-//Username: johnd Password: m38rmF$
-
-
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   String? _erro;
+
+  // Username: johnd | Password: m38rmF$
 
   Future<void> _fazerLogin() async {
     final username = _emailController.text.trim();
@@ -135,9 +134,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 10),
                       Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           GestureDetector(
-                            onTap: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                            onTap: () => Navigator.pushNamed(
+                                context, AppRoutes.forgotPassword),
                             child: const Text(
                               'Esqueceu sua senha?',
                               style: TextStyle(
@@ -148,8 +149,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Wrap(
-                            alignment: WrapAlignment.center,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               const Text(
                                 'Ainda não tem uma conta? ',
@@ -159,7 +160,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () => Navigator.pushNamed(context, AppRoutes.register),
+                                onTap: () => Navigator.pushNamed(
+                                    context, AppRoutes.register),
                                 child: const Text(
                                   'Registre-se',
                                   style: TextStyle(
