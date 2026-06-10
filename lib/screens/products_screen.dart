@@ -4,6 +4,7 @@ import 'package:shop_management/model/cart_item_model.dart';
 import 'package:shop_management/model/product_model.dart';
 import 'package:shop_management/screens/cart_screen.dart';
 import 'package:shop_management/service/product_service.dart';
+import 'package:shop_management/widgets/product_card.dart';
 import '../theme/app_theme.dart';
 import '../utils/app_routes.dart';
 
@@ -64,7 +65,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
       }
     });
 
-    // 👇 feedback visual
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${produto.title} adicionado ao carrinho!'),
@@ -187,137 +187,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
       ),
       itemCount: _produtos.length,
       itemBuilder: (context, index) {
-        return ProdutoCard(
+        return ProductCard(
           produto: _produtos[index],
           onComprar: _adicionarAoCarrinho,
         );
       },
-    );
-  }
-}
-
-class ProdutoCard extends StatelessWidget {
-  final Product produto;
-  final void Function(Product) onComprar;
-
-  const ProdutoCard(
-      {super.key, required this.produto, required this.onComprar});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-              child: Image.network(
-                produto.image,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const ColoredBox(
-                  color: Color(0xFFE0E0E0),
-                  child: Center(
-                    child: Icon(Icons.image_not_supported_outlined,
-                        size: 40, color: Colors.black54),
-                  ),
-                ),
-                loadingBuilder: (_, child, progress) {
-                  if (progress == null) return child;
-                  return const ColoredBox(
-                    color: Color(0xFFE0E0E0),
-                    child: Center(
-                        child: CircularProgressIndicator(strokeWidth: 2)),
-                  );
-                },
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 5,
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        produto.title,
-                        style: const TextStyle(
-                          color: AppTheme.bodyText,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        produto.category,
-                        style: const TextStyle(
-                          color: AppTheme.subtleText,
-                          fontSize: 10,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'R\$ ${produto.price.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => onComprar(produto),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Comprar',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
